@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PhoneCard from "@/components/PhoneCard";
-import { MOCK_PHONES } from "@/services/mockData";
-import { Search, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronDown, Loader2 } from "lucide-react";
 import { Phone } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
+  const [phones, setPhones] = useState<Phone[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
   // Filter States
@@ -19,13 +21,53 @@ export default function Home() {
   
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Filter Options
-  const brands = ["All", ...Array.from(new Set(MOCK_PHONES.map(p => p.brand)))];
-  const rams = ["All", ...Array.from(new Set(MOCK_PHONES.map(p => p.ram)))];
-  const storages = ["All", ...Array.from(new Set(MOCK_PHONES.map(p => p.storage)))];
-  const conditions = ["All", ...Array.from(new Set(MOCK_PHONES.map(p => p.condition)))];
+  useEffect(() => {
+    async function fetchPhones() {
+      try {
+        const { data, error } = await supabase
+          .from("phones")
+          .select("*")
+          .order("created_at", { ascending: false });
+          
+        if (error) throw error;
+        
+        if (data) {
+          // Map snake_case from DB to camelCase for our TypeScript Interface
+          const formattedPhones = data.map(p => ({
+            id: p.id,
+            name: p.name,
+            brand: p.brand,
+            image: p.image,
+            processor: p.processor,
+            display: p.display,
+            ram: p.ram,
+            storage: p.storage,
+            battery: p.battery,
+            camera: p.camera,
+            cashifyPrice: p.cashify_price,
+            originalPrice: p.original_price,
+            condition: p.condition,
+            cashifyAssurance: p.cashify_assurance
+          }));
+          setPhones(formattedPhones);
+        }
+      } catch (error) {
+        console.error("Error fetching phones:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchPhones();
+  }, []);
 
-  const filteredPhones = MOCK_PHONES.filter((phone) => {
+  // Filter Options based on available data
+  const brands = ["All", ...Array.from(new Set(phones.map(p => p.brand)))];
+  const rams = ["All", ...Array.from(new Set(phones.map(p => p.ram)))];
+  const storages = ["All", ...Array.from(new Set(phones.map(p => p.storage)))];
+  const conditions = ["All", ...Array.from(new Set(phones.map(p => p.condition)))];
+
+  const filteredPhones = phones.filter((phone) => {
     const matchesSearch = phone.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           phone.processor.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesBrand = selectedBrand === "All" || phone.brand === selectedBrand;
@@ -125,8 +167,13 @@ export default function Home() {
         )}
       </div>
 
-      {/* Grid */}
-      {filteredPhones.length > 0 ? (
+      {/* Loading & Grid */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin mb-4 text-primary" />
+          <p>Fetching live deals from database...</p>
+        </div>
+      ) : filteredPhones.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPhones.map((phone) => (
             <PhoneCard key={phone.id} phone={phone} />
