@@ -33,7 +33,7 @@ export default function Home() {
         
         if (data) {
           // Map snake_case from DB to camelCase for our TypeScript Interface
-          const formattedPhones = data.map(p => ({
+          const formattedPhones: Phone[] = data.map((p: any) => ({
             id: p.id,
             name: p.name,
             brand: p.brand,
