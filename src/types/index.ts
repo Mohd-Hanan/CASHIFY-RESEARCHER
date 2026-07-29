@@ -11,16 +11,16 @@ export interface Phone {
   storage: string;
   battery: string;
   camera: string;
-  androidVersion: string;
-  condition: PhoneCondition;
+  androidVersion?: string;
+  condition: PhoneCondition | string;
   cashifyAssurance: boolean;
   originalPrice: number;
   cashifyPrice: number;
-  productUrl: string;
-  availability: boolean;
-  dateAdded: string;
-  lastUpdated: string;
-  aiReviewSummary: string;
+  productUrl?: string;
+  availability?: boolean;
+  dateAdded?: string;
+  lastUpdated?: string;
+  aiReviewSummary?: string;
 }
 
 export interface PriceHistoryRecord {
